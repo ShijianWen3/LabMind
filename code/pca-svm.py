@@ -17,6 +17,7 @@ import joblib
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
+from datetime import datetime
 
 from scipy.interpolate import interp1d
 from sklearn.decomposition import PCA
@@ -33,7 +34,7 @@ from sklearn.utils.class_weight import compute_class_weight
 # 0. 配置区  ← 根据实际情况修改这里
 # ─────────────────────────────────────────────
 DATA_ROOT   = "./dataset/2026-3-18/train"          # 数据根目录
-MODEL_PATH  = "./models/pca-svm/svm_model.joblib"  # 模型保存路径
+MODEL_PATH  = "./models/pca-svm/"  # 模型保存路径
 TEST_SIZE   = 0.2               # 测试集比例
 RANDOM_SEED = 42
 PCA_VARIANCE= 0.95              # PCA 保留方差比例
@@ -232,6 +233,12 @@ def plot_pca_variance(model):
 # 7. 模型保存 / 加载
 # ══════════════════════════════════════════════
 def save_model(model, label_encoder, target_len: int, path: str = MODEL_PATH):
+
+    current = datetime.now()
+    now_date = str(current.date())
+    now_time = str(current.time()).split(":")[0] + "-" +str(current.time()).split(":")[1]
+    path = path + "svm_model-" + now_date + "_" + now_time + ".joblib"
+
     payload = {
         "model": model,
         "label_encoder": label_encoder,
@@ -335,4 +342,4 @@ if __name__ == "__main__":
     # main(tune=False)
 
     # 推理示例（取消注释使用）:
-    predict_single("./dataset/2026-3-18/train/class_A/1.csv")
+    predict_single("./dataset/2026-3-18/train/class_A/2.csv", "./models/pca-svm/svm_model-2026-03-19_19-20.joblib")
