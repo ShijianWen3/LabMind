@@ -14,6 +14,7 @@
 import os
 import glob
 import joblib
+import copy
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -34,9 +35,9 @@ from sklearn.utils.class_weight import compute_class_weight
 # 0. 配置区  ← 根据实际情况修改这里
 # ─────────────────────────────────────────────
 DATA_ROOT   = "./dataset/2026-3-18/train"          # 数据根目录
-MODEL_PATH  = "./models/pca-svm/"  # 模型保存路径
-TEST_SIZE   = 0.2               # 测试集比例
-RANDOM_SEED = 42
+MODEL_PATH  = "./models/pca-svm"  # 模型保存路径
+TEST_SIZE   = 0.4               # 测试集比例
+RANDOM_SEED = 33
 PCA_VARIANCE= 0.95              # PCA 保留方差比例
 # ─────────────────────────────────────────────
 
@@ -185,7 +186,7 @@ def tune_hyperparams(pipeline: Pipeline, X_train, y_train) -> Pipeline:
 # ══════════════════════════════════════════════
 # 5. 评估 & 可视化
 # ══════════════════════════════════════════════
-def evaluate(model, X_test, y_test, class_names):
+def evaluate(model, X_test, y_test, class_names, path:str):
     print("\n" + "=" * 50)
     print("Test Set Evaluation")
     print("=" * 50)
@@ -203,12 +204,12 @@ def evaluate(model, X_test, y_test, class_names):
     disp.plot(ax=ax, colorbar=True, cmap="Blues")
     ax.set_title("Confusion Matrix (Test Set)")
     plt.tight_layout()
-    plt.savefig("confusion_matrix.png", dpi=150)
+    plt.savefig(path+"confusion_matrix.png", dpi=150)
     plt.show()
     print("\nConfusion matrix saved to confusion_matrix.png")
 
 
-def plot_pca_variance(model):
+def plot_pca_variance(model, path:str):
     """Plot cumulative explained variance of PCA components."""
     pca = model.named_steps["pca"]
     cumvar = np.cumsum(pca.explained_variance_ratio_)
@@ -224,7 +225,7 @@ def plot_pca_variance(model):
     plt.legend()
     plt.grid(True, alpha=0.3)
     plt.tight_layout()
-    plt.savefig("pca_variance.png", dpi=150)
+    plt.savefig(path+"pca_variance.png", dpi=150)
     plt.show()
     print(f"PCA: 8000-dim -> {n_comp}-dim | variance plot saved to pca_variance.png")
 
@@ -237,7 +238,15 @@ def save_model(model, label_encoder, target_len: int, path: str = MODEL_PATH):
     current = datetime.now()
     now_date = str(current.date())
     now_time = str(current.time()).split(":")[0] + "-" +str(current.time()).split(":")[1]
-    path = path + "svm_model-" + now_date + "_" + now_time + ".joblib"
+    path = path + "/" + now_date + "_" + now_time + "/"
+
+    path_result = copy.copy(path)
+
+    #创建路径
+    os.makedirs(os.path.dirname(path), exist_ok=True)
+
+    path = path + "svm_model.joblib"
+
 
     payload = {
         "model": model,
@@ -246,6 +255,8 @@ def save_model(model, label_encoder, target_len: int, path: str = MODEL_PATH):
     }
     joblib.dump(payload, path)
     print(f"\n💾 模型已保存至: {path}  (target_len={target_len})")
+
+    return path_result
 
 
 def load_model(path: str = MODEL_PATH):
@@ -325,21 +336,21 @@ def main(tune: bool = False):
         model = pipeline
         print("✅ 训练完成")
 
+    # ── 保存模型（含 target_len）────────────────
+    path = save_model(model, le, target_len)
+
     # ── PCA 信息 ────────────────────────────────
-    plot_pca_variance(model)
+    plot_pca_variance(model, path)
 
     # ── 测试评估 ────────────────────────────────
-    evaluate(model, X_test, y_test, class_names)
-
-    # ── 保存模型（含 target_len）────────────────
-    save_model(model, le, target_len)
+    evaluate(model, X_test, y_test, class_names, path)
 
 
 # ─────────────────────────────────────────────
 if __name__ == "__main__":
     # 正常训练：main(tune=False)
     # 超参搜索：main(tune=True)
-    # main(tune=False)
+    main(tune=True)
 
     # 推理示例（取消注释使用）:
-    predict_single("./dataset/2026-3-18/train/class_A/2.csv", "./models/pca-svm/svm_model-2026-03-19_19-20.joblib")
+    # predict_single("./dataset/2026-3-18/train/class_A/2.csv", "./models/pca-svm/svm_model-2026-03-19_19-20.joblib")
