@@ -277,18 +277,21 @@ def plot_pca_variance(model, path:str):
 # ══════════════════════════════════════════════
 # 7. 模型保存 / 加载
 # ══════════════════════════════════════════════
-def save_model(model, label_encoder, target_len: int, path: str = MODEL_PATH):
 
+def _make_timestamped_dir(base_path: str) -> str:
+    """在 base_path 下创建以时间命名的子目录，返回该路径（末尾带 /）"""
     current = datetime.now()
     now_date = str(current.date())
-    now_time = str(current.time()).split(":")[0] + "-" +str(current.time()).split(":")[1]
-    path = path + "/" + now_date + "_" + now_time + "/"
+    now_time = (str(current.time()).split(":")[0] + "-"
+                + str(current.time()).split(":")[1])
+    save_dir = os.path.join(base_path, f"{now_date}_{now_time}")
+    save_dir += "/"
+    os.makedirs(save_dir, exist_ok=True)
+    return save_dir
 
-    path_result = copy.copy(path)
+def save_model(model, label_encoder, target_len: int, path: str):
 
-    #创建路径
-    os.makedirs(os.path.dirname(path), exist_ok=True)
-
+   
     path = path + "svm_model.joblib"
 
 
@@ -300,7 +303,6 @@ def save_model(model, label_encoder, target_len: int, path: str = MODEL_PATH):
     joblib.dump(payload, path)
     print(f"\n💾 模型已保存至: {path}  (target_len={target_len})")
 
-    return path_result
 
 
 def load_model(path: str = MODEL_PATH):
@@ -312,7 +314,7 @@ def load_model(path: str = MODEL_PATH):
 # ══════════════════════════════════════════════
 # 8. 预测新样本（推理接口）
 # ══════════════════════════════════════════════
-def predict_single(csv_path: str, model_path: str = MODEL_PATH):
+def predict_single(csv_path: str, model_path: str):
     """
     加载保存的模型，对单个 csv 文件进行预测。
     自动将输入光谱插值对齐到训练时的目标长度。
@@ -367,7 +369,20 @@ def main(tune: bool = False):
         stratify=y,
         random_state=RANDOM_SEED
     )
+
+    save_dir = _make_timestamped_dir(MODEL_PATH)
+    print(f"save_dir:{save_dir}")
+    log_path = os.path.join(save_dir, "log.txt")
+    tee = _Tee(log_path)
+    print(f"\n📁 本次模型保存目录: {save_dir}")
+    print(f"📝 日志实时写入: {log_path}")
+
     print(f"\n训练集: {X_train.shape[0]} 条 | 测试集: {X_test.shape[0]} 条")
+
+    # 打印训练集各类样本数
+    print("\n训练集类别分布:")
+    for cls, idx in zip(le.classes_, range(len(le.classes_))):
+        print(f"  {cls}: {np.sum(y_train == idx)} 条")
 
     # ── 构建 & 训练 ─────────────────────────────
     pipeline = build_pipeline()
@@ -381,20 +396,17 @@ def main(tune: bool = False):
         print("✅ 训练完成")
 
     # ── 保存模型（含 target_len）────────────────
-    path = save_model(model, le, target_len)
+    save_model(model, le, target_len, save_dir)
     #在保存模型函数内部使用时间戳生成目录
 
-    log_path = os.path.join(path, "log.txt")
-    tee = _Tee(log_path)
-    print(f"\n📁 本次模型保存目录: {path}")
-    print(f"📝 日志实时写入: {log_path}")
+    
 
 
     # ── PCA 信息 ────────────────────────────────
-    plot_pca_variance(model, path)
+    plot_pca_variance(model, save_dir)
 
     # ── 测试评估 ────────────────────────────────
-    evaluate(model, X_test, y_test, class_names, path)
+    evaluate(model, X_test, y_test, class_names, save_dir)
 
     tee.close()
 
