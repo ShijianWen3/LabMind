@@ -12,6 +12,7 @@
 """
 
 import os
+import sys
 import glob
 import joblib
 import copy
@@ -30,6 +31,49 @@ from sklearn.metrics import (
 )
 from sklearn.pipeline import Pipeline
 from sklearn.utils.class_weight import compute_class_weight
+
+
+# ══════════════════════════════════════════════
+# 日志工具：同时输出到终端和文件
+# ══════════════════════════════════════════════
+class _Tee:
+    """
+    将 stdout / stderr 同时写入终端和日志文件。
+    用法:
+        tee = _Tee(log_path)
+        ...（训练过程）...
+        tee.close()
+    """
+    def __init__(self, log_path: str):
+        self._log  = open(log_path, "w", encoding="utf-8")
+        self._stdout_orig = sys.stdout
+        self._stderr_orig = sys.stderr
+        sys.stdout = self
+        sys.stderr = self
+        # 写入文件头
+        self._log.write(f"{'=' * 60}\n")
+        self._log.write(f"训练日志  {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n")
+        self._log.write(f"{'=' * 60}\n\n")
+        self._log.flush()
+
+    def write(self, text: str):
+        self._stdout_orig.write(text)   # 正常输出到终端
+        self._log.write(text)           # 同步写入文件
+        self._log.flush()
+
+    def flush(self):
+        self._stdout_orig.flush()
+        self._log.flush()
+
+    def close(self):
+        sys.stdout = self._stdout_orig
+        sys.stderr = self._stderr_orig
+        self._log.write(f"\n{'=' * 60}\n")
+        self._log.write(f"日志结束  {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n")
+        self._log.write(f"{'=' * 60}\n")
+        self._log.close()
+        print(f"📝 日志已保存至: {self._log.name}")
+
 
 # ─────────────────────────────────────────────
 # 0. 配置区  ← 根据实际情况修改这里
@@ -338,12 +382,21 @@ def main(tune: bool = False):
 
     # ── 保存模型（含 target_len）────────────────
     path = save_model(model, le, target_len)
+    #在保存模型函数内部使用时间戳生成目录
+
+    log_path = os.path.join(path, "log.txt")
+    tee = _Tee(log_path)
+    print(f"\n📁 本次模型保存目录: {path}")
+    print(f"📝 日志实时写入: {log_path}")
+
 
     # ── PCA 信息 ────────────────────────────────
     plot_pca_variance(model, path)
 
     # ── 测试评估 ────────────────────────────────
     evaluate(model, X_test, y_test, class_names, path)
+
+    tee.close()
 
 
 # ─────────────────────────────────────────────
