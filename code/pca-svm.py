@@ -34,7 +34,7 @@ from sklearn.utils.class_weight import compute_class_weight
 # ─────────────────────────────────────────────
 # 0. 配置区  ← 根据实际情况修改这里
 # ─────────────────────────────────────────────
-DATA_ROOT   = "./dataset/2026-3-24/train"          # 数据根目录
+DATA_ROOT   = "./dataset/train"          # 数据根目录
 MODEL_PATH  = "./models/pca-svm"  # 模型保存路径
 TEST_SIZE   = 0.4               # 测试集比例
 RANDOM_SEED = 33
