@@ -387,7 +387,6 @@ def main(tune: bool = False):
         stratify=y_raw,
         random_state=RANDOM_SEED
     )
-    print(f"\n训练集: {X_train.shape[0]} 条 | 测试集: {X_test.shape[0]} 条")
 
     # ── 创建时间戳目录（两个模型共用同一目录）──────
     save_dir = _make_timestamped_dir(MODEL_PATH)
@@ -395,6 +394,10 @@ def main(tune: bool = False):
     tee = _Tee(log_path)                          # ← 从此处起所有 print 同步写入日志
     print(f"\n📁 本次模型保存目录: {save_dir}")
     print(f"📝 日志实时写入: {log_path}")
+
+    print(f"\n[total/former]训练集: {X_train.shape[0]} 条 | 测试集: {X_test.shape[0]} 条")
+    
+    
 
     # ══════════════════════════════════════════
     # 第一阶段（former）: 合格 vs 不合格
@@ -406,6 +409,19 @@ def main(tune: bool = False):
     # 将 A/B/C 合并为 "defective"，D 映射为 "qualified"
     y_binary_train = np.where(y_str_train == QUALIFIED_CLASS, "qualified", "defective")
     y_binary_test  = np.where(y_str_test  == QUALIFIED_CLASS, "qualified", "defective")
+
+
+    # 打印训练集各类样本数
+    print("\n[total/former] 训练集类别分布:")
+    for cls in np.unique(y_str_train):
+        print(f"  {cls}: {np.sum(y_str_train == cls)} 条")
+
+    # 打印合格/不合格分布（former 视角）
+    qualified_tr = np.sum(y_str_train == QUALIFIED_CLASS)
+    defective_tr = np.sum(y_str_train != QUALIFIED_CLASS)
+    print(f"\n[former] 训练集正负类分布:")
+    print(f"  qualified ({QUALIFIED_CLASS}): {qualified_tr} 条")
+    print(f"  defective (A+B+C) : {defective_tr} 条")
 
     le1 = LabelEncoder()
     y_tr1 = le1.fit_transform(y_binary_train)
