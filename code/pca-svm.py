@@ -285,6 +285,7 @@ def _make_timestamped_dir(base_path: str) -> str:
     now_time = (str(current.time()).split(":")[0] + "-"
                 + str(current.time()).split(":")[1])
     save_dir = os.path.join(base_path, f"{now_date}_{now_time}")
+    save_dir += "/"
     os.makedirs(save_dir, exist_ok=True)
     return save_dir
 
