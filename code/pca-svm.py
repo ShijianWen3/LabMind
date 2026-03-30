@@ -16,9 +16,9 @@
 """
 
 import os
+import sys
 import glob
 import joblib
-import copy
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -34,13 +34,55 @@ from sklearn.metrics import (
 )
 from sklearn.pipeline import Pipeline
 
+# ══════════════════════════════════════════════
+# 日志工具：同时输出到终端和文件
+# ══════════════════════════════════════════════
+class _Tee:
+    """
+    将 stdout / stderr 同时写入终端和日志文件。
+    用法:
+        tee = _Tee(log_path)
+        ...（训练过程）...
+        tee.close()
+    """
+    def __init__(self, log_path: str):
+        self._log  = open(log_path, "w", encoding="utf-8")
+        self._stdout_orig = sys.stdout
+        self._stderr_orig = sys.stderr
+        sys.stdout = self
+        sys.stderr = self
+        # 写入文件头
+        self._log.write(f"{'=' * 60}\n")
+        self._log.write(f"训练日志  {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n")
+        self._log.write(f"{'=' * 60}\n\n")
+        self._log.flush()
+
+    def write(self, text: str):
+        self._stdout_orig.write(text)   # 正常输出到终端
+        self._log.write(text)           # 同步写入文件
+        self._log.flush()
+
+    def flush(self):
+        self._stdout_orig.flush()
+        self._log.flush()
+
+    def close(self):
+        sys.stdout = self._stdout_orig
+        sys.stderr = self._stderr_orig
+        self._log.write(f"\n{'=' * 60}\n")
+        self._log.write(f"日志结束  {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n")
+        self._log.write(f"{'=' * 60}\n")
+        self._log.close()
+        print(f"📝 日志已保存至: {self._log.name}")
+
+
 # ─────────────────────────────────────────────
 # 0. 配置区  ← 根据实际情况修改这里
 # ─────────────────────────────────────────────
 DATA_ROOT    = "./dataset/train"   # 数据根目录
 MODEL_PATH   = "./models/pca-svm"            # 模型保存根路径
-TEST_SIZE    = 0.4                           # 测试集比例
-RANDOM_SEED  = 33
+TEST_SIZE    = 0.35                           # 测试集比例
+RANDOM_SEED  = 42
 PCA_VARIANCE = 0.95                          # PCA 保留方差比例
 
 # 合格类别名称（与文件夹名一致）
@@ -349,7 +391,10 @@ def main(tune: bool = False):
 
     # ── 创建时间戳目录（两个模型共用同一目录）──────
     save_dir = _make_timestamped_dir(MODEL_PATH)
+    log_path = os.path.join(save_dir, "log.txt")
+    tee = _Tee(log_path)                          # ← 从此处起所有 print 同步写入日志
     print(f"\n📁 本次模型保存目录: {save_dir}")
+    print(f"📝 日志实时写入: {log_path}")
 
     # ══════════════════════════════════════════
     # 第一阶段（former）: 合格 vs 不合格
@@ -473,8 +518,10 @@ def main(tune: bool = False):
     print(f"   ├── pca_variance_latter.png")
     print(f"   ├── confusion_matrix_former.png")
     print(f"   ├── confusion_matrix_latter.png")
-    print(f"   └── confusion_matrix_e2e.png")
+    print(f"   ├── confusion_matrix_e2e.png")
+    print(f"   └── log.txt")
 
+    tee.close()                                   # ← 关闭日志，恢复 stdout/stderr
     return save_dir
 
 
