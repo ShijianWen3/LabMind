@@ -81,7 +81,7 @@ class _Tee:
 # ─────────────────────────────────────────────
 DATA_ROOT    = "./dataset/train"   # 数据根目录
 MODEL_PATH   = "./models/pca-svm"            # 模型保存根路径
-TEST_SIZE    = 0.35                           # 测试集比例
+TEST_SIZE    = 0.3                           # 测试集比例
 RANDOM_SEED  = 42
 PCA_VARIANCE = 0.95                          # PCA 保留方差比例
 
