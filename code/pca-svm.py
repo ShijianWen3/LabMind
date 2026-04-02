@@ -376,7 +376,7 @@ def main(tune: bool = False):
     tee = _Tee(log_path)
     print(f"\n📁 本次模型保存目录: {save_dir}")
     print(f"📝 日志实时写入: {log_path}")
-
+    print(f"测试集比例:{TEST_SIZE},Random-Seed:{RANDOM_SEED}")
     print(f"\n训练集: {X_train.shape[0]} 条 | 测试集: {X_test.shape[0]} 条")
 
     # 打印训练集各类样本数
