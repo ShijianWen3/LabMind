@@ -81,7 +81,7 @@ class _Tee:
 # ─────────────────────────────────────────────
 DATA_ROOT    = "./dataset/train"   # 数据根目录
 MODEL_PATH   = "./models/pca-svm"            # 模型保存根路径
-TEST_SIZE    = 0.3                           # 测试集比例
+TEST_SIZE    = 0.30                           # 测试集比例
 RANDOM_SEED  = 42
 PCA_VARIANCE = 0.95                          # PCA 保留方差比例
 
@@ -395,7 +395,7 @@ def main(tune: bool = False):
     tee = _Tee(log_path)                          # ← 从此处起所有 print 同步写入日志
     print(f"\n📁 本次模型保存目录: {save_dir}")
     print(f"📝 日志实时写入: {log_path}")
-
+    print(f"测试集比例:{TEST_SIZE},Random-Seed:{RANDOM_SEED}")
     print(f"\n[total/former]训练集: {X_train.shape[0]} 条 | 测试集: {X_test.shape[0]} 条")
     
     
@@ -546,7 +546,7 @@ def main(tune: bool = False):
 if __name__ == "__main__":
     # 正常训练：main(tune=False)
     # 超参搜索：main(tune=True)
-    main(tune=True)
+    main(tune=False)
 
     # 推理示例（取消注释使用，路径改为实际保存路径）:
     # predict_single(
