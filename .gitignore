@@ -5,3 +5,5 @@
 *.joblib
 /claude
 /models
+*.exe
+/fastapi
