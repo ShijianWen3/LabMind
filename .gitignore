@@ -5,3 +5,6 @@
 *.joblib
 /claude
 /models
+*.zip
+*.exe
+/temp
