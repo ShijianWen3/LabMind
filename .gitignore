@@ -7,3 +7,5 @@
 /models
 *.exe
 /fastapi
+*.zip
+/temp
