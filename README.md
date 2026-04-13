@@ -5,7 +5,6 @@
 <p align="center">
   <img src="https://img.shields.io/badge/Python-3.8+-blue?logo=python" alt="Python">
   <img src="https://img.shields.io/badge/FastAPI-0.100+-green?logo=fastapi" alt="FastAPI">
-  <img src="https://img.shields.io/badge/PCA-SVM-Algorithm-orange" alt="PCA+SVM">
   <img src="https://img.shields.io/badge/License-MIT-yellow" alt="License">
 </p>
 
