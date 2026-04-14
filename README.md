@@ -1,5 +1,7 @@
 # LabMind
 
+<img src=".\assets\app.png" style="zoom:50%;" />
+
 > 智能光谱数据分析与分类系统 / Intelligent Spectral Data Analysis & Classification System
 
 <p align="center">
